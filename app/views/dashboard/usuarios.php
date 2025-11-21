@@ -1,0 +1,86 @@
+<section class="dashboard-section">
+    <header class="section-header">
+        <h2>Gestión de Usuarios</h2>
+        <a href="?section=usuarios-crear" class="btn-primary" style="text-decoration:none; display:inline-block;">+ Nuevo Usuario</a>
+    </header>
+    
+    <section class="filtros">
+        <form action="" method="GET" style="display:flex; gap:1rem; width:100%;">
+            <input type="hidden" name="section" value="usuarios">
+            <input type="text" placeholder="Buscar usuario..." class="input-busqueda" aria-label="Buscar usuarios">
+            
+            <select name="rol" class="select-filtro" aria-label="Filtrar por rol" onchange="this.form.submit()">
+                <option <?php echo (!isset($filtro_actual) || $filtro_actual == 'Todos los roles') ? 'selected' : ''; ?>>Todos los roles</option>
+                <option value="Administrador" <?php echo (isset($filtro_actual) && $filtro_actual == 'Administrador') ? 'selected' : ''; ?>>Administrador</option>
+                <option value="Vendedor" <?php echo (isset($filtro_actual) && $filtro_actual == 'Vendedor') ? 'selected' : ''; ?>>Vendedor</option>
+                <option value="Inventario" <?php echo (isset($filtro_actual) && $filtro_actual == 'Inventario') ? 'selected' : ''; ?>>Inventario</option>
+            </select>
+        </form>
+    </section>
+    
+    <table class="tabla-datos">
+        <thead>
+            <tr>
+                <th scope="col">Nombre</th>
+                <th scope="col">Email</th>
+                <th scope="col">Rol</th>
+                <th scope="col">Sucursal</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($lista_usuarios as $usuario): ?>
+                <?php 
+                    // Lógica robusta: Funciona con "Activo", "1", 1, true, etc.
+                    $es_activo = ($usuario['estado'] === 'Activo' || $usuario['estado'] == 1);
+                    
+                    $clase_rol = strtolower($usuario['rol']); 
+                    $clase_estado = $es_activo ? 'activo' : 'inactivo';
+                    $texto_estado = $es_activo ? 'Activo' : 'Inactivo';
+                ?>
+                <tr>
+                    <td><?php echo $usuario['nombre']; ?></td>
+                    <td><?php echo $usuario['email']; ?></td>
+                    <td>
+                        <mark class="badge <?php echo $clase_rol; ?>">
+                            <?php echo $usuario['rol']; ?>
+                        </mark>
+                    </td>
+                    <td><?php echo $usuario['sucursal']; ?></td>
+                    <td>
+                        <mark class="estado <?php echo $clase_estado; ?>">
+                            <?php echo $texto_estado; ?>
+                        </mark>
+                    </td>
+                    <td>
+                        <menu class="acciones" style="display:flex; gap: 5px;">
+                            <a href="?section=usuarios-editar&id=<?php echo $usuario['id']; ?>" class="btn-editar" style="text-decoration:none;">Editar</a>
+
+                            <?php if ($es_activo): ?>
+                                <a href="?section=usuarios-estado&id=<?php echo $usuario['id']; ?>&estado=0" 
+                                   class="btn-eliminar" 
+                                   style="text-decoration:none;">
+                                   Desactivar
+                                </a>
+                            <?php else: ?>
+                                <a href="?section=usuarios-estado&id=<?php echo $usuario['id']; ?>&estado=1" 
+                                   class="btn-activar" 
+                                   style="text-decoration:none;">
+                                   Activar
+                                </a>
+                            <?php endif; ?>
+
+                            <a href="?section=usuarios-eliminar&id=<?php echo $usuario['id']; ?>" 
+                               class="btn-eliminar" 
+                               style="text-decoration:none; border: 1px solid #C62828; background-color: #ffebee; color: #c62828;"
+                               onclick="return confirm('¿Estás seguro? Esto no se puede deshacer.');">
+                               Eliminar
+                            </a>
+                        </menu>
+                    </td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+</section>
