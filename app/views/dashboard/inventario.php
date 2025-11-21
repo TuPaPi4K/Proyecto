@@ -5,14 +5,24 @@
     </header>
     
     <section class="filtros">
-        <input type="text" placeholder="Buscar producto..." class="input-busqueda" aria-label="Buscar productos">
-        <select class="select-filtro" aria-label="Filtrar por categoría">
-            <option>Todas las categorías</option>
-            <option>Pollos Enteros</option>
-            <option>Milanesas</option>
-            <option>Aliños</option>
-            <option>Especias</option>
-        </select>
+        <form action="" method="GET" style="display:flex; gap:1rem; width:100%;">
+            
+            <input type="hidden" name="section" value="inventario">
+
+            <input type="text" placeholder="Buscar producto..." class="input-busqueda" aria-label="Buscar productos">
+            
+            <select name="categoria" class="select-filtro" aria-label="Filtrar por categoría" onchange="this.form.submit()">
+                <option <?php echo (!isset($filtro_actual) || $filtro_actual == 'Todas las categorías') ? 'selected' : ''; ?>>Todas las categorías</option>
+                
+                <?php 
+                $categorias = ['Pollos Enteros', 'Milanesas', 'Aliños', 'Especias', 'Otros'];
+                foreach($categorias as $cat): 
+                    $selected = (isset($filtro_actual) && $filtro_actual == $cat) ? 'selected' : '';
+                ?>
+                    <option value="<?php echo $cat; ?>" <?php echo $selected; ?>><?php echo $cat; ?></option>
+                <?php endforeach; ?>
+            </select>
+        </form>
     </section>
     
     <table class="tabla-datos">

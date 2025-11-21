@@ -1,5 +1,5 @@
 <?php
-
+// Importamos todos los modelos necesarios
 require_once __DIR__ . '/../Models/Usuario.php';
 require_once __DIR__ . '/../Models/Producto.php';
 require_once __DIR__ . '/../Models/Venta.php';
@@ -7,101 +7,48 @@ require_once __DIR__ . '/../Models/Reporte.php';
 
 class DashboardController {
     
-    // --- SECCIÓN DE ESTADÍSTICAS ---
+// --- SECCIÓN DE ESTADÍSTICAS (HOME) ---
     public function stats() {
+        // Pedimos los datos REALES al modelo Reporte
+        $ventas_hoy = Reporte::getVentasHoy();
+        $transacciones_hoy = Reporte::getTransaccionesHoy();
+        $stock_total = Reporte::getStockTotal();
+        $usuarios_activos = Reporte::getUsuariosActivos();
+        
+        // Datos para la vista
         $data = [
             'section' => 'stats',
-            'ventas_dia' => 4250.00,
-            'porcentaje_ayer' => 12,
-            'stock_total' => 1248,
-            'usuarios_activos' => 24,
-            'ordenes_pendientes' => 18
+            'ventas_dia' => $ventas_hoy,
+            'transacciones_hoy' => $transacciones_hoy,
+            'stock_total' => $stock_total,
+            'usuarios_activos' => $usuarios_activos,
+            'porcentaje_ayer' => 0, // (Pendiente: Calcular vs ayer requeriría más lógica)
+            'ordenes_pendientes' => 0 // (Pendiente: Si implementamos estados de pedido)
         ];
 
         $this->render('stats', $data);
     }
 
-    // --- SECCIÓN DE INVENTARIO---
-    public function inventario() {
-        $productos = Producto::all();
-        
-        $data = [
-            'section' => 'inventario',
-            'lista_productos' => $productos
-        ];
-
-        $this->render('inventario', $data);
-    }
-
-    // --- SECCIÓN DE USUARIOS ---
-   public function usuarios() {
-        // 1. Verificamos si hay un filtro en la URL
+    // ------------------------------------------------
+    // SECCIÓN 2: USUARIOS
+    // ------------------------------------------------
+    public function usuarios() {
         $filtroRol = isset($_GET['rol']) ? $_GET['rol'] : null;
-
-        // 2. Pedimos los datos al modelo (pasando el filtro)
         $usuarios = Usuario::all($filtroRol);
         
         $data = [
             'section' => 'usuarios', 
             'lista_usuarios' => $usuarios,
-            'filtro_actual' => $filtroRol // Pasamos esto para mantener el select seleccionado
+            'filtro_actual' => $filtroRol
         ];
-
         $this->render('usuarios', $data);
     }
 
-    // --- SECCIÓN DE VENTAS ---
-    public function ventas() {
-        // Obtenemos la lista para la tabla
-        $lista_ventas = Venta::all();
-        
-        // Preparamos los datos (incluyendo las métricas de las tarjetas)
-        $data = [
-            'section' => 'ventas',
-            'lista_ventas' => $lista_ventas,
-            
-            // Datos para las tarjetas de arriba (Simulados)
-            'ventas_hoy_total' => 4250.00,
-            'ventas_hoy_cantidad' => 32,
-            'ventas_semana' => 28450.00,
-            'ticket_promedio' => 132.81
-        ];
-
-        $this->render('ventas', $data);
-    }
-
-    // --- SECCIÓN DE REPORTES (NUEVA) ---
-    public function reportes() {
-        // Recopilamos datos de múltiples fuentes del modelo
-        $ventasSucursal = Reporte::getVentasPorSucursal();
-        $topProductos = Reporte::getTopProductos();
-        $rendimiento = Reporte::getRendimientoVendedores();
-        $metricas = Reporte::getMetricasClave();
-        $detalleVentas = Reporte::getDetalleVentas();
-
-        // Calculamos el total general de ventas sumando las sucursales
-        $totalVentas = array_sum($ventasSucursal);
-
-        $data = [
-            'section' => 'reportes',
-            'ventas_sucursal' => $ventasSucursal,
-            'total_ventas' => $totalVentas,
-            'top_productos' => $topProductos,
-            'rendimiento_vendedores' => $rendimiento,
-            'metricas' => $metricas,
-            'tabla_detalle' => $detalleVentas
-        ];
-
-        $this->render('reportes', $data);
-    }
-
-// 1. Muestra el formulario
     public function crearUsuario() {
         $data = ['section' => 'usuarios'];
         $this->render('usuarios_crear', $data);
     }
 
-    // 2. Guarda los datos
     public function guardarUsuario() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $datos = [
@@ -110,93 +57,72 @@ class DashboardController {
                 'rol' => $_POST['rol'],
                 'sucursal' => $_POST['sucursal']
             ];
-            
             Usuario::create($datos);
-            
             header("Location: ?section=usuarios");
             exit();
         }
     }
 
-    // 3. Cargar formulario de edición con datos
     public function editarUsuario() {
-        // Verificamos que venga el ID en la URL
         if (isset($_GET['id'])) {
             $id = $_GET['id'];
             $usuario = Usuario::find($id);
             
-            $data = [
-                'section' => 'usuarios',
-                'usuario' => $usuario // Pasamos los datos del usuario a la vista
-            ];
-            
+            $data = ['section' => 'usuarios', 'usuario' => $usuario];
             $this->render('usuarios_editar', $data);
         } else {
-            // Si no hay ID, mandamos de vuelta a la lista
             header("Location: ?section=usuarios");
         }
     }
 
-    // 4. Procesar la actualización
     public function actualizarUsuario() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $datos = [
-                'id' => $_POST['id'], // ¡Importante! El ID viene oculto
+                'id' => $_POST['id'],
                 'nombre' => $_POST['nombre'],
                 'email' => $_POST['email'],
                 'rol' => $_POST['rol'],
                 'sucursal' => $_POST['sucursal']
             ];
-            
             Usuario::update($datos);
-            
             header("Location: ?section=usuarios");
             exit();
         }
     }
 
-    // 5. Procesar la eliminación
     public function eliminarUsuario() {
-        // Solo eliminamos si viene un ID en la URL
         if (isset($_GET['id'])) {
-            $id = $_GET['id'];
-            
-            Usuario::delete($id);
-            
-            // Redirigimos a la lista
+            Usuario::delete($_GET['id']);
             header("Location: ?section=usuarios");
             exit();
         }
     }
 
-    // 6. Procesar cambio de estado
     public function cambiarEstadoUsuario() {
         if (isset($_GET['id']) && isset($_GET['estado'])) {
-            $id = $_GET['id'];
-            $estado = $_GET['estado']; // Vendrá como 1 o 0
-            
-            Usuario::cambiarEstado($id, $estado);
-            
+            Usuario::cambiarEstado($_GET['id'], $_GET['estado']);
             header("Location: ?section=usuarios");
             exit();
         }
     }
 
-    // --- HELPER PARA RENDERIZAR VISTAS ---
-    private function render($viewName, $data = []) {
-        // Convierte las claves del array en variables
-        extract($data);
+    // --- INVENTARIO / PRODUCTOS ---
+    public function inventario() {
+        // 1. Verificamos si hay filtro en la URL
+        $filtroCategoria = isset($_GET['categoria']) ? $_GET['categoria'] : null;
 
-        $viewsPath = __DIR__ . '/../Views/';
-
-        require_once $viewsPath . 'layouts/header.php';
-        require_once $viewsPath . 'layouts/navigation.php';
-        require_once $viewsPath . "dashboard/$viewName.php";
-        require_once $viewsPath . 'layouts/footer.php';
+        // 2. Pedimos los productos filtrados al modelo
+        $productos = Producto::all($filtroCategoria);
+        
+        $data = [
+            'section' => 'inventario', 
+            'lista_productos' => $productos,
+            'filtro_actual' => $filtroCategoria // Para mantener seleccionado el filtro
+        ];
+        
+        $this->render('inventario', $data);
     }
 
-    // --- PRODUCTOS ---
-    
     public function crearProducto() {
         $data = ['section' => 'inventario'];
         $this->render('productos_crear', $data);
@@ -211,30 +137,23 @@ class DashboardController {
                 'stock_minimo' => $_POST['stock_minimo'],
                 'precio' => $_POST['precio']
             ];
-            
             Producto::create($datos);
-            
             header("Location: ?section=inventario");
             exit();
         }
     }
 
-    // 3. Formulario de Edición
     public function editarProducto() {
+        // SI AQUÍ FALLA EL "find", DA PANTALLA BLANCA
         if (isset($_GET['id'])) {
             $id = $_GET['id'];
             $producto = Producto::find($id);
             
-            $data = [
-                'section' => 'inventario',
-                'producto' => $producto
-            ];
-            
+            $data = ['section' => 'inventario', 'producto' => $producto];
             $this->render('productos_editar', $data);
         }
     }
 
-    // 4. Procesar Actualización
     public function actualizarProducto() {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $datos = [
@@ -245,22 +164,192 @@ class DashboardController {
                 'stock_minimo' => $_POST['stock_minimo'],
                 'precio' => $_POST['precio']
             ];
-            
             Producto::update($datos);
-            
             header("Location: ?section=inventario");
             exit();
         }
     }
 
-    // 5. Eliminar
     public function eliminarProducto() {
         if (isset($_GET['id'])) {
-            $id = $_GET['id'];
-            Producto::delete($id);
+            Producto::delete($_GET['id']);
             header("Location: ?section=inventario");
             exit();
         }
     }
 
-}
+    // ------------------------------------------------
+    // SECCIÓN 4: VENTAS
+    // ------------------------------------------------
+    public function ventas() {
+        // Filtros
+        $fechaInicio = isset($_GET['inicio']) ? $_GET['inicio'] : null;
+        $fechaFin = isset($_GET['fin']) ? $_GET['fin'] : null;
+
+        $lista_ventas = Venta::all($fechaInicio, $fechaFin);
+        
+        $data = [
+            'section' => 'ventas',
+            'lista_ventas' => $lista_ventas,
+            'inicio' => $fechaInicio,
+            'fin' => $fechaFin,
+            
+            // KPIs REALES CONECTADOS AL MODELO
+            'ventas_hoy_total' => Reporte::getVentasHoy(),
+            'ventas_hoy_cantidad' => Reporte::getTransaccionesHoy(),
+            'ventas_semana' => Reporte::getVentasSemana(),     // <--- NUEVO
+            'ticket_promedio' => Reporte::getTicketPromedio()  // <--- NUEVO
+        ];
+        $this->render('ventas', $data);
+    }
+
+    // ------------------------------------------------
+    // SECCIÓN 5: REPORTES
+    // ------------------------------------------------
+    public function reportes() {
+        // 1. Capturar filtros de fecha de la URL
+        $inicio = isset($_GET['inicio']) ? $_GET['inicio'] : null;
+        $fin = isset($_GET['fin']) ? $_GET['fin'] : null;
+
+        // 2. Pedir datos filtrados al Modelo
+        // Pasamos ($inicio, $fin) a todas las funciones
+        $ventasSucursal = Reporte::getVentasPorSucursal($inicio, $fin);
+        $topProductos = Reporte::getTopProductos($inicio, $fin);
+        $rendimiento = Reporte::getRendimientoVendedores($inicio, $fin);
+        $metricas = Reporte::getMetricasClave($inicio, $fin);
+        $detalleVentas = Reporte::getDetalleVentas($inicio, $fin);
+
+        $totalVentas = array_sum($ventasSucursal);
+
+        $data = [
+            'section' => 'reportes',
+            'ventas_sucursal' => $ventasSucursal,
+            'total_ventas' => $totalVentas,
+            'top_productos' => $topProductos,
+            'rendimiento_vendedores' => $rendimiento,
+            'metricas' => $metricas,
+            'tabla_detalle' => $detalleVentas,
+            // Pasamos las fechas a la vista para mantenerlas en los inputs
+            'inicio' => $inicio,
+            'fin' => $fin
+        ];
+
+        $this->render('reportes', $data);
+    }
+
+    // ------------------------------------------------
+    // HELPER: RENDERIZAR VISTAS
+    // ------------------------------------------------
+    private function render($viewName, $data = []) {
+        extract($data);
+        $viewsPath = __DIR__ . '/../Views/';
+        
+        // Verificamos que el archivo exista para evitar errores silenciosos
+        if (file_exists($viewsPath . "dashboard/$viewName.php")) {
+            require_once $viewsPath . 'layouts/header.php';
+            require_once $viewsPath . 'layouts/navigation.php';
+            require_once $viewsPath . "dashboard/$viewName.php";
+            require_once $viewsPath . 'layouts/footer.php';
+        } else {
+            echo "<h1>Error: No se encuentra la vista 'app/Views/dashboard/$viewName.php'</h1>";
+        }
+    }
+
+    // --- VENTAS ---
+    
+    // ... tu método ventas() sigue igual ...
+
+    // 1. Formulario de Nueva Venta
+    public function crearVenta() {
+        // Necesitamos la lista de productos para el <select>
+        // Solo cargamos productos con stock > 0 para no vender aire
+        $productos = Producto::all(); // (Nota: Podríamos filtrar por stock > 0 aquí)
+        
+        $data = [
+            'section' => 'ventas',
+            'lista_productos' => $productos
+        ];
+        $this->render('ventas_crear', $data);
+    }
+
+    // 2. Procesar la Venta
+    public function guardarVenta() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Datos generales
+            $cliente = $_POST['cliente'];
+            $vendedor = $_SESSION['usuario_nombre']; // ¡El usuario logueado!
+            
+            // Datos del producto seleccionado
+            $id_producto = $_POST['producto_id'];
+            $cantidad = $_POST['cantidad'];
+            
+            // Buscamos el producto para saber su precio y validar stock
+            $producto = Producto::find($id_producto);
+
+            // VALIDACIÓN: ¿Hay suficiente stock?
+            if ($producto['stock_actual'] < $cantidad) {
+                echo "<script>alert('Error: No hay suficiente stock para realizar esta venta.'); window.history.back();</script>";
+                exit();
+            }
+
+            $precio_unitario = $producto['precio'];
+            $total_venta = $precio_unitario * $cantidad;
+
+            // Preparamos los arrays para el Modelo
+            $datos_venta = [
+                'cliente' => $cliente,
+                'vendedor' => $vendedor,
+                'total' => $total_venta
+            ];
+
+            $item = [
+                'id_producto' => $id_producto,
+                'cantidad' => $cantidad,
+                'precio_unitario' => $precio_unitario
+            ];
+
+            try {
+                Venta::create($datos_venta, $item);
+                header("Location: ?section=ventas");
+                exit();
+            } catch (Exception $e) {
+                echo "Error al procesar la venta: " . $e->getMessage();
+            }
+        }
+    }
+
+    // NUEVO: Ver Detalle / Factura
+    public function verVenta() {
+        if (isset($_GET['id'])) {
+            $id = $_GET['id'];
+            $venta = Venta::find($id);
+            $detalles = Venta::getDetalles($id);
+            
+            $data = [
+                'section' => 'ventas',
+                'venta' => $venta,
+                'detalles' => $detalles
+            ];
+            $this->render('ventas_detalle', $data);
+        }
+    }
+
+    // NUEVO: Procesar Venta (De pendiente a completada)
+    public function procesarVenta() {
+        if (isset($_GET['id'])) {
+            Venta::procesar($_GET['id']);
+            header("Location: ?section=ventas");
+            exit();
+        }
+    }
+
+    // NUEVO: Cancelar Venta
+    public function cancelarVenta() {
+        if (isset($_GET['id'])) {
+            Venta::cancelar($_GET['id']);
+            header("Location: ?section=ventas");
+            exit();
+        }
+    }
+
+} // <--- FIN DE LA CLASE (Esta llave es crítica)

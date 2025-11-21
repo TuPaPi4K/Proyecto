@@ -94,6 +94,25 @@ switch ($section) {
     case 'ventas':
         $controller->ventas();
         break;
+    case 'ventas':
+        $controller->ventas();
+        break;
+    case 'ventas-crear':      // <--- NUEVA
+        $controller->crearVenta();
+        break;
+    case 'ventas-guardar':    // <--- NUEVA
+        $controller->guardarVenta();
+        break;
+    case 'ventas-ver': 
+        $controller->verVenta(); 
+        break;
+    case 'ventas-procesar': 
+        $controller->procesarVenta(); 
+        break;
+    case 'ventas-cancelar': 
+        $controller->cancelarVenta(); 
+        break;
+
     case 'reportes':
         $controller->reportes();
         break;

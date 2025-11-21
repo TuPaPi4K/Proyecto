@@ -2,11 +2,12 @@
 require_once __DIR__ . '/../../config/database.php';
 
 class Producto {
-    public static function all() {
-        $database = new Database();
-        $db = $database->getConnection();
+    
+    // 1. Listar productos (Combina filtro de categoría + Solo activos)
+    public static function all($categoria = null) {
+        $db = (new Database())->getConnection();
         
-        // Consulta SQL
+        // Consulta base: Solo productos activos (Soft Delete check)
         $query = "SELECT 
                     id, 
                     nombre, 
@@ -15,22 +16,31 @@ class Producto {
                     stock_minimo, 
                     precio,
                     IF(stock_actual <= stock_minimo, 'Stock Bajo', 'En Stock') as estado
-                  FROM productos";
-        
+                  FROM productos 
+                  WHERE activo = 1"; 
+
+        // Si hay categoría seleccionada, agregamos el filtro AND
+        if ($categoria && $categoria != 'Todas las categorías') {
+            $query .= " AND categoria = :categoria";
+        }
+
         $stmt = $db->prepare($query);
-        
-        // CORRECCIÓN AQUÍ: Usar -> en lugar de .
-        $stmt->execute(); 
-        
+
+        // Vinculamos el parámetro si existe
+        if ($categoria && $categoria != 'Todas las categorías') {
+            $stmt->bindParam(':categoria', $categoria);
+        }
+
+        $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // Crear nuevo producto
+    // 2. Crear (Insertamos con activo = 1 por defecto)
     public static function create($data) {
         $db = (new Database())->getConnection();
 
-        $query = "INSERT INTO productos (nombre, categoria, stock_actual, stock_minimo, precio) 
-                  VALUES (:nombre, :categoria, :stock, :minimo, :precio)";
+        $query = "INSERT INTO productos (nombre, categoria, stock_actual, stock_minimo, precio, activo) 
+                  VALUES (:nombre, :categoria, :stock, :minimo, :precio, 1)";
         
         $stmt = $db->prepare($query);
         
@@ -43,16 +53,16 @@ class Producto {
         return $stmt->execute();
     }
 
-    // Buscar por ID (Para editar)
+    // 3. Buscar por ID (Solo si está activo)
     public static function find($id) {
         $db = (new Database())->getConnection();
-        $stmt = $db->prepare("SELECT * FROM productos WHERE id = :id");
+        $stmt = $db->prepare("SELECT * FROM productos WHERE id = :id AND activo = 1");
         $stmt->bindParam(':id', $id);
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    // Actualizar producto
+    // 4. Actualizar
     public static function update($data) {
         $db = (new Database())->getConnection();
         
@@ -76,12 +86,14 @@ class Producto {
         return $stmt->execute();
     }
 
-    // Eliminar producto
+    // 5. Eliminar (Soft Delete: Update activo = 0)
     public static function delete($id) {
         $db = (new Database())->getConnection();
-        $stmt = $db->prepare("DELETE FROM productos WHERE id = :id");
+        
+        $query = "UPDATE productos SET activo = 0 WHERE id = :id";
+        
+        $stmt = $db->prepare($query);
         $stmt->bindParam(':id', $id);
         return $stmt->execute();
     }
-
 }
