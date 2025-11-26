@@ -22,30 +22,113 @@ body {
 /* Header Styles */
 .dashboard-header {
     background: linear-gradient(135deg, var(--naranja-primario), var(--naranja-secundario));
-    padding: 1.5rem 2rem;
+    padding: 1rem 2rem;
     display: flex;
     align-items: center;
+    justify-content: space-between; /* IMPORTANTE: Esto separa logo y perfil */
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    color: var(--blanco);
 }
 
 .logo-container {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
+    gap: 1rem;
 }
 
 .logo {
-    width: 70px;
-    height: 70px;
+    width: 50px;
+    height: 50px;
     object-fit: contain;
+    background: rgba(255, 255, 255, 0.2);
     border-radius: 8px;
+    padding: 5px;
 }
 
 .empresa-nombre h1 {
     color: var(--blanco);
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     margin: 0;
     line-height: 1.2;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* PERFIL DE USUARIO (Esto es lo que te falta) */
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.user-info {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    line-height: 1.2;
+}
+
+.user-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--blanco);
+}
+
+.user-role-badge {
+    background-color: rgba(0, 0, 0, 0.2);
+    color: rgba(255, 255, 255, 0.9);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    margin-top: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-logout {
+    background-color: var(--blanco);
+    color: var(--naranja-primario);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-logout:hover {
+    background-color: #f0f0f0;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    color: #E65100;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .dashboard-header {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+    }
+    
+    .user-profile {
+        width: 100%;
+        justify-content: space-between;
+        border-radius: 8px;
+    }
+    
+    .user-info {
+        align-items: flex-start;
+        text-align: left;
+    }
 }
 
 /* Navigation Styles */

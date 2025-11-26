@@ -77,6 +77,14 @@
                                onclick="return confirm('¿Estás seguro? Esto no se puede deshacer.');">
                                Eliminar
                             </a>
+
+                            <a href="?section=usuarios-reset&id=<?php echo $usuario['id']; ?>" 
+                               class="btn-editar" 
+                               style="text-decoration:none; background-color:#FF9800; color:white; border:none;"
+                             onclick="return confirm('¿Restablecer la contraseña de este usuario a 123456?');"
+                             title="Restablecer clave a 123456">
+                             🔑
+                            </a>
                         </menu>
                     </td>
                 </tr>

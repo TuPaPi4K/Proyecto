@@ -35,19 +35,18 @@ class Usuario {
     public static function create($data) {
         $db = (new Database())->getConnection();
 
-        // Preparamos la consulta SQL de inserción
-        $query = "INSERT INTO usuarios (nombre, email, rol, sucursal, estado) 
-                  VALUES (:nombre, :email, :rol, :sucursal, 1)"; // 1 = Activo por defecto
+        // Agregamos la columna password al INSERT
+        $query = "INSERT INTO usuarios (nombre, email, password, rol, sucursal, estado) 
+                  VALUES (:nombre, :email, :password, :rol, :sucursal, 1)";
         
         $stmt = $db->prepare($query);
         
-        // Vinculamos los datos reales (evita inyección SQL)
         $stmt->bindParam(':nombre', $data['nombre']);
         $stmt->bindParam(':email', $data['email']);
+        $stmt->bindParam(':password', $data['password']); // <--- Vinculamos
         $stmt->bindParam(':rol', $data['rol']);
         $stmt->bindParam(':sucursal', $data['sucursal']);
         
-        // ¡Fuego!
         return $stmt->execute();
     }
 
@@ -115,6 +114,19 @@ class Usuario {
         $stmt->bindParam(':email', $email);
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    // 5. Restablecer contraseña (Reset Password)
+    public static function resetPassword($id, $password_hash) {
+        $db = (new Database())->getConnection();
+        
+        $query = "UPDATE usuarios SET password = :password WHERE id = :id";
+        
+        $stmt = $db->prepare($query);
+        $stmt->bindParam(':password', $password_hash);
+        $stmt->bindParam(':id', $id);
+        
+        return $stmt->execute();
     }
 
 }

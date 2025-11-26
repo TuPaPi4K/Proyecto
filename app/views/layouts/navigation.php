@@ -5,11 +5,15 @@
                 📊 Estadísticas
             </a>
         </li>
-        <li class="nav-item">
-            <a href="?section=usuarios" class="nav-link <?php echo ($section == 'usuarios') ? 'active' : ''; ?>">
-                👥 Usuarios
-            </a>
-        </li>
+
+        <?php if (isset($_SESSION['usuario_rol']) && $_SESSION['usuario_rol'] === 'Administrador'): ?>
+            <li class="nav-item">
+                <a href="?section=usuarios" class="nav-link <?php echo ($section == 'usuarios') ? 'active' : ''; ?>">
+                    👥 Usuarios
+                </a>
+            </li>
+        <?php endif; ?>
+
         <li class="nav-item">
             <a href="?section=inventario" class="nav-link <?php echo ($section == 'inventario') ? 'active' : ''; ?>">
                 📦 Inventario

@@ -66,6 +66,12 @@ switch ($section) {
     case 'usuarios-estado':
         $controller->cambiarEstadoUsuario();
         break;
+        case 'usuarios-estado':
+        $controller->cambiarEstadoUsuario();
+        break;
+    case 'usuarios-reset':      // <--- NUEVA RUTA
+        $controller->resetearClaveUsuario();
+        break;
 
 // --- PRODUCTOS / INVENTARIO ---
     case 'inventario':
@@ -119,5 +125,12 @@ switch ($section) {
         
     default:
         $controller->stats();
+        break;
+
+        case 'perfil':
+        $controller->perfil();
+        break;
+    case 'perfil-guardar':
+        $controller->guardarPerfil();
         break;
 }

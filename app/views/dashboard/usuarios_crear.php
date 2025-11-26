@@ -12,8 +12,13 @@
         </div>
 
         <div class="form-group">
-            <label for="email">Email:</label>
+            <label for="email">Email (Usuario para Login):</label>
             <input type="email" id="email" name="email" required class="input-busqueda" style="width: 100%;">
+        </div>
+
+        <div class="form-group">
+            <label for="password">Contraseña Inicial:</label>
+            <input type="password" id="password" name="password" required class="input-busqueda" style="width: 100%;" placeholder="Mínimo 6 caracteres">
         </div>
 
         <div class="form-group">
