@@ -7,12 +7,12 @@
         </div>
     </header>
 
-    <div class="factura-box" style="background: white; padding: 2rem; border: 1px solid #eee;">
-        <div style="display:flex; justify-content:space-between; margin-bottom: 2rem; border-bottom: 2px solid #FF6B00; padding-bottom: 1rem;">
-            <div>
-                <h1 style="color: #FF6B00; margin:0;">Pollo Na'Guara</h1>
-                <p>La mejor calidad en pollos y aliños</p>
-            </div>
+    <div style="display:flex; justify-content:space-between; margin-bottom: 2rem; border-bottom: 2px solid var(--naranja-primario); padding-bottom: 1rem;">
+    <div>
+        <h1 style="color: var(--naranja-primario); margin:0;"><?php echo $config['titulo_landing']; ?></h1>
+        <p><?php echo $config['descripcion_landing']; ?></p>
+        <p><small><?php echo $config['email_contacto']; ?> | <?php echo $config['telefono']; ?></small></p>
+    </div>
             <div style="text-align:right;">
                 <p><strong>Fecha:</strong> <?php echo date('d/m/Y H:i', strtotime($venta['fecha'])); ?></p>
                 <p><strong>Vendedor:</strong> <?php echo $venta['vendedor']; ?></p>

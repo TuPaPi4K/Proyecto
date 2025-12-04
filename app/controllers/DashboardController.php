@@ -4,10 +4,12 @@ require_once __DIR__ . '/../Models/Usuario.php';
 require_once __DIR__ . '/../Models/Producto.php';
 require_once __DIR__ . '/../Models/Venta.php';
 require_once __DIR__ . '/../Models/Reporte.php';
+// Agregamos el modelo de configuración
+require_once __DIR__ . '/../Models/Configuracion.php';
 
 class DashboardController {
     
-    // --- SECCIÓN DE ESTADÍSTICAS (ACCESO PARA TODOS) ---
+    // --- SECCIÓN DE ESTADÍSTICAS ---
     public function stats() {
         $ventas_hoy = Reporte::getVentasHoy();
         $transacciones_hoy = Reporte::getTransaccionesHoy();
@@ -19,19 +21,82 @@ class DashboardController {
             'ventas_dia' => $ventas_hoy,
             'transacciones_hoy' => $transacciones_hoy,
             'stock_total' => $stock_total,
-            'usuarios_activos' => $usuarios_activos,
-            'porcentaje_ayer' => 0,
-            'ordenes_pendientes' => 0
+            'usuarios_activos' => $usuarios_activos
         ];
 
         $this->render('stats', $data);
     }
 
-    // ------------------------------------------------
-    // SECCIÓN 2: USUARIOS (SOLO ADMINISTRADORES)
-    // ------------------------------------------------
-    public function usuarios() {
+    // --- NUEVA SECCIÓN: CONFIGURACIÓN ---
+    public function configuracion() {
         // SEGURIDAD: Solo Administradores
+        if ($_SESSION['usuario_rol'] !== 'Administrador') {
+            header("Location: ?section=stats");
+            exit();
+        }
+
+        // Obtener datos
+        $config = Configuracion::get(); 
+        
+        // Renderizar vista
+        // AQUI ESTABA EL ERROR: Agregamos 'section' => 'configuracion'
+        $this->render('configuracion', [
+            'config' => $config,
+            'section' => 'configuracion' 
+        ]);
+    }
+    
+    public function guardarConfiguracion() {
+        // 1. Seguridad
+        if ($_SESSION['usuario_rol'] !== 'Administrador') {
+            header("Location: ?section=stats");
+            exit();
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            
+            // 2. Manejo de la Imagen (Logo)
+            $ruta_logo = $_POST['logo_actual']; // Por defecto, mantenemos el que ya estaba
+
+            // Si el usuario subió una imagen nueva...
+            if (isset($_FILES['logo_imagen']) && $_FILES['logo_imagen']['error'] === UPLOAD_ERR_OK) {
+                $nombre_archivo = $_FILES['logo_imagen']['name'];
+                $tmp_name = $_FILES['logo_imagen']['tmp_name'];
+                
+                // Generamos un nombre único para evitar problemas de caché (ej: logo_174123.png)
+                $extension = pathinfo($nombre_archivo, PATHINFO_EXTENSION);
+                $nuevo_nombre = 'logo_' . time() . '.' . $extension;
+                
+                // Ruta donde se guardará (carpeta public/assets/)
+                $destino = __DIR__ . '/../../public/assets/' . $nuevo_nombre;
+                
+                if (move_uploaded_file($tmp_name, $destino)) {
+                    $ruta_logo = 'assets/' . $nuevo_nombre; // Guardamos la ruta relativa para la BD
+                }
+            }
+
+            // 3. Preparamos los datos para el Modelo
+            $datos = [
+                'primario' => $_POST['color_primario'],
+                'secundario' => $_POST['color_secundario'],
+                'titulo' => $_POST['titulo_landing'],
+                'descripcion' => $_POST['descripcion_landing'],
+                'telefono' => $_POST['telefono'],
+                'email' => $_POST['email_contacto'],
+                'logo_url' => $ruta_logo // <--- Pasamos la ruta de la imagen
+            ];
+            
+            // 4. Guardamos
+            Configuracion::update($datos);
+            
+            // 5. Redirigimos
+            header("Location: ?section=configuracion");
+            exit();
+        }
+    }
+
+    // --- USUARIOS ---
+    public function usuarios() {
         if ($_SESSION['usuario_rol'] !== 'Administrador') {
             header("Location: ?section=stats");
             exit();
@@ -49,73 +114,72 @@ class DashboardController {
     }
 
     public function crearUsuario() {
-        // SEGURIDAD
         if ($_SESSION['usuario_rol'] !== 'Administrador') {
             header("Location: ?section=stats");
             exit();
         }
-
-        $data = ['section' => 'usuarios'];
-        $this->render('usuarios_crear', $data);
+        $this->render('usuarios_crear', ['section' => 'usuarios']);
     }
 
     public function guardarUsuario() {
-        // SEGURIDAD
-        if ($_SESSION['usuario_rol'] !== 'Administrador') {
-            header("Location: ?section=stats");
-            exit();
-        }
+        if ($_SESSION['usuario_rol'] !== 'Administrador') exit();
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // Encriptamos la contraseña
             $password_hash = password_hash($_POST['password'], PASSWORD_DEFAULT);
-
             $datos = [
                 'nombre' => $_POST['nombre'],
                 'email' => $_POST['email'],
-                'password' => $password_hash, // <--- Agregamos esto
+                'password' => $password_hash,
                 'rol' => $_POST['rol'],
-                'sucursal' => $_POST['sucursal']
             ];
-            
             Usuario::create($datos);
             header("Location: ?section=usuarios");
             exit();
         }
     }
 
-    public function editarUsuario() {
-        // SEGURIDAD
+    public function restablecerConfiguracion() {
+        // 1. Seguridad
         if ($_SESSION['usuario_rol'] !== 'Administrador') {
             header("Location: ?section=stats");
             exit();
         }
 
+        // 2. Definimos los valores originales ("de fábrica")
+        $datos_default = [
+            'primario' => '#FF6B00',    // Naranja original
+            'secundario' => '#FF8C42',  // Naranja secundario
+            'titulo' => "Pollo Na'Guara",
+            'descripcion' => 'La mejor calidad en pollos y aliños.',
+            'telefono' => '0414-1234567',
+            'email' => 'contacto@pollonaguara.com',
+            'logo_url' => 'assets/logo.png' // Logo original
+        ];
+        
+        // 3. Guardamos estos datos en la BD
+        Configuracion::update($datos_default);
+        
+        // 4. Recargamos la página
+        echo "<script>alert('¡Configuración restablecida a los valores originales!'); window.location.href='?section=configuracion';</script>";
+        exit();
+    }
+
+    public function editarUsuario() {
+        if ($_SESSION['usuario_rol'] !== 'Administrador') exit();
         if (isset($_GET['id'])) {
-            $id = $_GET['id'];
-            $usuario = Usuario::find($id);
-            
-            $data = ['section' => 'usuarios', 'usuario' => $usuario];
-            $this->render('usuarios_editar', $data);
-        } else {
-            header("Location: ?section=usuarios");
+            $usuario = Usuario::find($_GET['id']);
+            $this->render('usuarios_editar', ['section' => 'usuarios', 'usuario' => $usuario]);
         }
     }
 
     public function actualizarUsuario() {
-        // SEGURIDAD
-        if ($_SESSION['usuario_rol'] !== 'Administrador') {
-            header("Location: ?section=stats");
-            exit();
-        }
-
+        if ($_SESSION['usuario_rol'] !== 'Administrador') exit();
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $datos = [
                 'id' => $_POST['id'],
                 'nombre' => $_POST['nombre'],
                 'email' => $_POST['email'],
                 'rol' => $_POST['rol'],
-                'sucursal' => $_POST['sucursal']
             ];
             Usuario::update($datos);
             header("Location: ?section=usuarios");
@@ -124,12 +188,7 @@ class DashboardController {
     }
 
     public function eliminarUsuario() {
-        // SEGURIDAD
-        if ($_SESSION['usuario_rol'] !== 'Administrador') {
-            header("Location: ?section=stats");
-            exit();
-        }
-
+        if ($_SESSION['usuario_rol'] !== 'Administrador') exit();
         if (isset($_GET['id'])) {
             Usuario::delete($_GET['id']);
             header("Location: ?section=usuarios");
@@ -138,12 +197,7 @@ class DashboardController {
     }
 
     public function cambiarEstadoUsuario() {
-        // SEGURIDAD
-        if ($_SESSION['usuario_rol'] !== 'Administrador') {
-            header("Location: ?section=stats");
-            exit();
-        }
-
+        if ($_SESSION['usuario_rol'] !== 'Administrador') exit();
         if (isset($_GET['id']) && isset($_GET['estado'])) {
             Usuario::cambiarEstado($_GET['id'], $_GET['estado']);
             header("Location: ?section=usuarios");
@@ -151,26 +205,50 @@ class DashboardController {
         }
     }
 
-    // --- INVENTARIO / PRODUCTOS (ACCESO PARA TODOS) ---
+    public function resetearClaveUsuario() {
+        if ($_SESSION['usuario_rol'] !== 'Administrador') exit();
+        if (isset($_GET['id'])) {
+            $password_hash = password_hash("123456", PASSWORD_DEFAULT);
+            Usuario::resetPassword($_GET['id'], $password_hash);
+            echo "<script>alert('Contraseña restablecida a: 123456'); window.location.href='?section=usuarios';</script>";
+            exit();
+        }
+    }
+
+    // --- INVENTARIO ---
     public function inventario() {
+        // SEGURIDAD: Empleados fuera
+        if ($_SESSION['usuario_rol'] !== 'Administrador') {
+            header("Location: ?section=stats");
+            exit();
+        }
+
         $filtroCategoria = isset($_GET['categoria']) ? $_GET['categoria'] : null;
         $productos = Producto::all($filtroCategoria);
+        
+        // --- NUEVO: Obtenemos los totales para las cards ---
+        $total_stock = Reporte::getStockTotal();
+        $valor_inventario = Reporte::getValorInventario();
         
         $data = [
             'section' => 'inventario', 
             'lista_productos' => $productos,
-            'filtro_actual' => $filtroCategoria
+            'filtro_actual' => $filtroCategoria,
+            'total_stock' => $total_stock,          // <--- Dato para Card 1
+            'valor_inventario' => $valor_inventario // <--- Dato para Card 2
         ];
         
         $this->render('inventario', $data);
     }
 
     public function crearProducto() {
-        $data = ['section' => 'inventario'];
-        $this->render('productos_crear', $data);
+        if ($_SESSION['usuario_rol'] !== 'Administrador') { header("Location: ?section=stats"); exit(); }
+        $this->render('productos_crear', ['section' => 'inventario']);
     }
 
     public function guardarProducto() {
+        if ($_SESSION['usuario_rol'] !== 'Administrador') exit(); // Bloqueo silencioso para POST
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $datos = [
                 'nombre' => $_POST['nombre'],
@@ -186,16 +264,17 @@ class DashboardController {
     }
 
     public function editarProducto() {
+        if ($_SESSION['usuario_rol'] !== 'Administrador') { header("Location: ?section=stats"); exit(); }
+        
         if (isset($_GET['id'])) {
-            $id = $_GET['id'];
-            $producto = Producto::find($id);
-            
-            $data = ['section' => 'inventario', 'producto' => $producto];
-            $this->render('productos_editar', $data);
+            $producto = Producto::find($_GET['id']);
+            $this->render('productos_editar', ['section' => 'inventario', 'producto' => $producto]);
         }
     }
 
     public function actualizarProducto() {
+        if ($_SESSION['usuario_rol'] !== 'Administrador') exit();
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $datos = [
                 'id' => $_POST['id'],
@@ -212,6 +291,8 @@ class DashboardController {
     }
 
     public function eliminarProducto() {
+        if ($_SESSION['usuario_rol'] !== 'Administrador') exit();
+
         if (isset($_GET['id'])) {
             Producto::delete($_GET['id']);
             header("Location: ?section=inventario");
@@ -219,11 +300,10 @@ class DashboardController {
         }
     }
 
-    // --- VENTAS (ACCESO PARA TODOS) ---
+    // --- VENTAS ---
     public function ventas() {
         $fechaInicio = isset($_GET['inicio']) ? $_GET['inicio'] : null;
         $fechaFin = isset($_GET['fin']) ? $_GET['fin'] : null;
-
         $lista_ventas = Venta::all($fechaInicio, $fechaFin);
         
         $data = [
@@ -241,11 +321,7 @@ class DashboardController {
 
     public function crearVenta() {
         $productos = Producto::all();
-        $data = [
-            'section' => 'ventas',
-            'lista_productos' => $productos
-        ];
-        $this->render('ventas_crear', $data);
+        $this->render('ventas_crear', ['section' => 'ventas', 'lista_productos' => $productos]);
     }
 
     public function guardarVenta() {
@@ -265,17 +341,8 @@ class DashboardController {
             $precio_unitario = $producto['precio'];
             $total_venta = $precio_unitario * $cantidad;
 
-            $datos_venta = [
-                'cliente' => $cliente,
-                'vendedor' => $vendedor,
-                'total' => $total_venta
-            ];
-
-            $item = [
-                'id_producto' => $id_producto,
-                'cantidad' => $cantidad,
-                'precio_unitario' => $precio_unitario
-            ];
+            $datos_venta = ['cliente' => $cliente, 'vendedor' => $vendedor, 'total' => $total_venta];
+            $item = ['id_producto' => $id_producto, 'cantidad' => $cantidad, 'precio_unitario' => $precio_unitario];
 
             try {
                 Venta::create($datos_venta, $item);
@@ -292,13 +359,7 @@ class DashboardController {
             $id = $_GET['id'];
             $venta = Venta::find($id);
             $detalles = Venta::getDetalles($id);
-            
-            $data = [
-                'section' => 'ventas',
-                'venta' => $venta,
-                'detalles' => $detalles
-            ];
-            $this->render('ventas_detalle', $data);
+            $this->render('ventas_detalle', ['section' => 'ventas', 'venta' => $venta, 'detalles' => $detalles]);
         }
     }
 
@@ -318,35 +379,51 @@ class DashboardController {
         }
     }
 
-    // --- REPORTES (ACCESO PARA TODOS) ---
+    // --- REPORTES ---
     public function reportes() {
         $inicio = isset($_GET['inicio']) ? $_GET['inicio'] : null;
         $fin = isset($_GET['fin']) ? $_GET['fin'] : null;
 
-        $ventasSucursal = Reporte::getVentasPorSucursal($inicio, $fin);
-        $topProductos = Reporte::getTopProductos($inicio, $fin);
-        $rendimiento = Reporte::getRendimientoVendedores($inicio, $fin);
-        $metricas = Reporte::getMetricasClave($inicio, $fin);
-        $detalleVentas = Reporte::getDetalleVentas($inicio, $fin);
-
-        $totalVentas = array_sum($ventasSucursal);
-
         $data = [
             'section' => 'reportes',
-            'ventas_sucursal' => $ventasSucursal,
-            'total_ventas' => $totalVentas,
-            'top_productos' => $topProductos,
-            'rendimiento_vendedores' => $rendimiento,
-            'metricas' => $metricas,
-            'tabla_detalle' => $detalleVentas,
-            'inicio' => $inicio,
+            'top_productos' => Reporte::getTopProductos($inicio, $fin),
+            'rendimiento_vendedores' => Reporte::getRendimientoVendedores($inicio, $fin),
+            'metricas' => Reporte::getMetricasClave($inicio, $fin),
+            'tabla_detalle' => Reporte::getDetalleVentas($inicio, $fin),
+            'total_ventas' => Reporte::getTotalVentasPeriodo($inicio, $fin), // Nuevo cálculo directo
+            'inicio' => $inicio, 
             'fin' => $fin
         ];
 
         $this->render('reportes', $data);
     }
 
-    // --- HELPER: RENDERIZAR VISTAS ---
+    // --- PERFIL ---
+    public function perfil() {
+        $this->render('perfil', ['section' => 'perfil']);
+    }
+
+    public function guardarPerfil() {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $pass1 = $_POST['password'];
+            $pass2 = $_POST['confirm_password'];
+
+            if ($pass1 !== $pass2) {
+                echo "<script>alert('Error: Las contraseñas no coinciden.'); window.history.back();</script>";
+                exit();
+            }
+            if (strlen($pass1) < 4) {
+                echo "<script>alert('Error: La contraseña es muy corta.'); window.history.back();</script>";
+                exit();
+            }
+
+            Usuario::resetPassword($_SESSION['usuario_id'], password_hash($pass1, PASSWORD_DEFAULT));
+            echo "<script>alert('¡Contraseña actualizada!'); window.location.href='?section=stats';</script>";
+            exit();
+        }
+    }
+
+    // --- HELPER: RENDER ---
     private function render($viewName, $data = []) {
         extract($data);
         $viewsPath = __DIR__ . '/../Views/';
@@ -360,62 +437,4 @@ class DashboardController {
             echo "<h1>Error: No se encuentra la vista 'app/Views/dashboard/$viewName.php'</h1>";
         }
     }
-
-    // 7. Restablecer contraseña a '123456'
-    public function resetearClaveUsuario() {
-        // SEGURIDAD
-        if ($_SESSION['usuario_rol'] !== 'Administrador') {
-            header("Location: ?section=stats");
-            exit();
-        }
-
-        if (isset($_GET['id'])) {
-            $id = $_GET['id'];
-            // Contraseña temporal: 123456
-            $password_hash = password_hash("123456", PASSWORD_DEFAULT);
-            
-            Usuario::resetPassword($id, $password_hash);
-            
-            // Opcional: Podrías mandar un mensaje de éxito con JS
-            echo "<script>alert('Contraseña restablecida a: 123456'); window.location.href='?section=usuarios';</script>";
-            exit();
-        }
-    }
-
-    // --- MI PERFIL (Cambio de Clave Personal) ---
-    
-    public function perfil() {
-        // Esta pantalla la puede ver CUALQUIERA logueado (Admin o Vendedor)
-        $data = ['section' => 'perfil']; // section 'perfil' no existe en menu, no marcará nada, está bien
-        $this->render('perfil', $data);
-    }
-
-    public function guardarPerfil() {
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $pass1 = $_POST['password'];
-            $pass2 = $_POST['confirm_password'];
-
-            if ($pass1 !== $pass2) {
-                echo "<script>alert('Error: Las contraseñas no coinciden.'); window.history.back();</script>";
-                exit();
-            }
-
-            if (strlen($pass1) < 4) {
-                echo "<script>alert('Error: La contraseña es muy corta.'); window.history.back();</script>";
-                exit();
-            }
-
-            // Obtenemos el ID del usuario conectado
-            $id_usuario = $_SESSION['usuario_id'];
-            $hash = password_hash($pass1, PASSWORD_DEFAULT);
-
-            // Reutilizamos el método resetPassword que ya creamos en el Modelo
-            // (Funciona igual: actualiza la pass del ID indicado)
-            Usuario::resetPassword($id_usuario, $hash);
-
-            echo "<script>alert('¡Contraseña actualizada con éxito!'); window.location.href='?section=stats';</script>";
-            exit();
-        }
-    }
-
-} // FIN DE LA CLASE
+}

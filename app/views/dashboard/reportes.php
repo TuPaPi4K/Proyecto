@@ -24,7 +24,12 @@
     
     <div class="print-area">
         <div class="print-header" style="display:none; margin-bottom:20px; text-align:center;">
-            <h1>Reporte de Gestión - Pollo Na'Guara</h1>
+            <img src="<?php echo $config['logo_url']; ?>" style="height: 60px; width: auto; margin-bottom: 10px;">
+            <h1 style="margin:0;"><?php echo $config['titulo_landing']; ?></h1>
+            <p style="margin:5px 0; font-size: 0.9rem;"><?php echo $config['email_contacto']; ?> | <?php echo $config['telefono']; ?></p>
+            <hr style="margin: 15px 0; border: 0; border-top: 1px solid #ccc;">
+            
+            <h2 style="margin-top:0;">Reporte de Gestión</h2>
             <p>Generado el: <?php echo date('d/m/Y H:i'); ?></p>
             <?php if($inicio && $fin): ?>
                 <p>Período: <?php echo date('d/m/Y', strtotime($inicio)); ?> al <?php echo date('d/m/Y', strtotime($fin)); ?></p>
@@ -32,48 +37,35 @@
         </div>
 
         <section class="stats-grid">
-            <article class="stat-card">
-                <h3>Ventas por Sucursal</h3>
-                <?php if(empty($ventas_sucursal)): ?>
-                    <p>No hay datos en este período.</p>
-                <?php else: ?>
-                    <?php foreach ($ventas_sucursal as $sucursal => $monto): ?>
-                        <p><strong><?php echo $sucursal; ?>:</strong> $<?php echo number_format($monto, 2); ?></p>
-                    <?php endforeach; ?>
-                    <p style="border-top: 1px solid #eee; margin-top: 5px; padding-top: 5px;">
-                        <strong>Total:</strong> $<?php echo number_format($total_ventas, 2); ?>
-                    </p>
-                <?php endif; ?>
-            </article>
             
             <article class="stat-card">
-                <h3>Top 5 Productos</h3>
-                <?php if(empty($top_productos)): ?>
-                    <p>No hay datos.</p>
-                <?php else: ?>
-                    <?php foreach ($top_productos as $producto => $cantidad): ?>
-                        <p><strong><?php echo $producto; ?>:</strong> <?php echo $cantidad; ?> uds</p>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </article>
-
-            <article class="stat-card">
-                <h3>Rendimiento Vendedores</h3>
+                <h3> Rendimiento Empleados</h3>
                 <?php if(empty($rendimiento_vendedores)): ?>
                     <p>No hay datos.</p>
                 <?php else: ?>
                     <?php foreach ($rendimiento_vendedores as $vendedor => $venta): ?>
-                        <p><strong><?php echo $vendedor; ?>:</strong> $<?php echo number_format($venta, 2); ?></p>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                            <span><?php echo $vendedor; ?></span>
+                            <strong>$<?php echo number_format($venta, 2); ?></strong>
+                        </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
             </article>
 
             <article class="stat-card">
-                <h3>Métricas Clave</h3>
-                <p><strong>Ticket Promedio:</strong> $<?php echo $metricas['ticket_promedio']; ?></p>
-                <p><strong>Conversión:</strong> <?php echo $metricas['conversion']; ?></p>
-                <p><strong>Crecimiento:</strong> <?php echo $metricas['crecimiento']; ?></p>
+                <h3> Top 5 Productos</h3>
+                <?php if(empty($top_productos)): ?>
+                    <p>No hay datos.</p>
+                <?php else: ?>
+                    <?php foreach ($top_productos as $producto => $cantidad): ?>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px; border-bottom: 1px solid #eee; padding-bottom: 5px;">
+                            <span><?php echo $producto; ?></span>
+                            <strong><?php echo $cantidad; ?> uds</strong>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </article>
+
         </section>
         
         <h3 style="margin: 2rem 0 1rem 0;">Detalle de Movimientos</h3>
@@ -84,13 +76,12 @@
                     <th scope="col">Producto</th>
                     <th scope="col">Cantidad</th>
                     <th scope="col">Total</th>
-                    <th scope="col">Sucursal</th>
                     <th scope="col">Vendedor</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if(empty($tabla_detalle)): ?>
-                    <tr><td colspan="6" style="text-align:center;">No se encontraron registros en este rango de fechas.</td></tr>
+                    <tr><td colspan="5" style="text-align:center;">No se encontraron registros en este rango de fechas.</td></tr>
                 <?php else: ?>
                     <?php foreach ($tabla_detalle as $fila): ?>
                         <tr>
@@ -98,7 +89,6 @@
                             <td><?php echo $fila['producto']; ?></td>
                             <td><?php echo $fila['cantidad']; ?></td>
                             <td>$<?php echo number_format($fila['total'], 2); ?></td>
-                            <td><?php echo $fila['sucursal']; ?></td>
                             <td><?php echo $fila['vendedor']; ?></td>
                         </tr>
                     <?php endforeach; ?>

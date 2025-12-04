@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../../config/database.php';
 
 class Venta {
-    // 1. Listar ventas con FILTRO DE FECHAS
+    // Listar ventas con FILTRO DE FECHAS
     public static function all($fechaInicio = null, $fechaFin = null) {
         $db = (new Database())->getConnection();
         
@@ -37,13 +37,13 @@ class Venta {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // 2. Crear Venta (Ya la tenías, la mantenemos igual)
+    // Crear Venta 
     public static function create($datos_venta, $item) {
         $db = (new Database())->getConnection();
         try {
             $db->beginTransaction();
 
-            // A. Cabecera
+            // Cabecera
             $queryVenta = "INSERT INTO ventas (codigo_venta, cliente, vendedor, total, estado) 
                            VALUES (:codigo, :cliente, :vendedor, :total, 'Completada')";
             $stmtV = $db->prepare($queryVenta);
@@ -56,7 +56,7 @@ class Venta {
             ]);
             $id_venta = $db->lastInsertId();
 
-            // B. Detalle
+            // Detalle
             $queryDetalle = "INSERT INTO detalle_ventas (id_venta, id_producto, cantidad, precio_unitario) 
                              VALUES (:id_venta, :id_producto, :cantidad, :precio)";
             $stmtD = $db->prepare($queryDetalle);
@@ -67,7 +67,7 @@ class Venta {
                 ':precio' => $item['precio_unitario']
             ]);
 
-            // C. Descontar Stock
+            // Descontar Stock
             $queryStock = "UPDATE productos SET stock_actual = stock_actual - :cantidad WHERE id = :id";
             $stmtS = $db->prepare($queryStock);
             $stmtS->execute([':cantidad' => $item['cantidad'], ':id' => $item['id_producto']]);
@@ -80,7 +80,7 @@ class Venta {
         }
     }
 
-    // 3. Obtener UNA venta por ID (Para ver detalle)
+    // Obtener UNA venta por ID (Para ver detalle)
     public static function find($id) {
         $db = (new Database())->getConnection();
         $stmt = $db->prepare("SELECT * FROM ventas WHERE id = :id");
@@ -89,7 +89,7 @@ class Venta {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    // 4. Obtener los productos de una venta
+    // Obtener los productos de una venta
     public static function getDetalles($id_venta) {
         $db = (new Database())->getConnection();
         $query = "SELECT d.*, p.nombre as producto_nombre 
@@ -102,7 +102,7 @@ class Venta {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    // 5. Procesar (Simplemente cambiar estado)
+    // Procesar (Simplemente cambiar estado)
     public static function procesar($id) {
         $db = (new Database())->getConnection();
         $stmt = $db->prepare("UPDATE ventas SET estado = 'Completada' WHERE id = :id");
@@ -110,18 +110,18 @@ class Venta {
         return $stmt->execute();
     }
 
-    // 6. CANCELAR (Devolver stock y cambiar estado)
+    // CANCELAR (Devolver stock y cambiar estado)
     public static function cancelar($id) {
         $db = (new Database())->getConnection();
         try {
             $db->beginTransaction();
 
-            // A. Cambiar estado a Cancelada
+            // Cambiar estado a Cancelada
             $stmt = $db->prepare("UPDATE ventas SET estado = 'Cancelada' WHERE id = :id");
             $stmt->bindParam(':id', $id);
             $stmt->execute();
 
-            // B. Recuperar los productos para devolverlos al inventario
+            // Recuperar los productos para devolverlos al inventario
             $detalles = self::getDetalles($id);
             
             $queryStock = "UPDATE productos SET stock_actual = stock_actual + :cantidad WHERE id = :id";

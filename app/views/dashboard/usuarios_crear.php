@@ -24,9 +24,8 @@
         <div class="form-group">
             <label for="rol">Rol:</label>
             <select id="rol" name="rol" class="select-filtro" style="width: 100%;">
-                <option value="Vendedor">Vendedor</option>
+                <option value="Empleado">Empleado</option>
                 <option value="Administrador">Administrador</option>
-                <option value="Inventario">Inventario</option>
             </select>
         </div>
 

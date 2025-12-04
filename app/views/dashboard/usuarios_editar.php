@@ -25,9 +25,8 @@
         <div class="form-group">
             <label for="rol">Rol:</label>
             <select id="rol" name="rol" class="select-filtro" style="width: 100%;">
-                <option value="Vendedor" <?php echo ($usuario['rol'] == 'Vendedor') ? 'selected' : ''; ?>>Vendedor</option>
+                <option value="Empleado" <?php echo ($usuario['rol'] == 'Empleado') ? 'selected' : ''; ?>>Empleado</option>
                 <option value="Administrador" <?php echo ($usuario['rol'] == 'Administrador') ? 'selected' : ''; ?>>Administrador</option>
-                <option value="Inventario" <?php echo ($usuario['rol'] == 'Inventario') ? 'selected' : ''; ?>>Inventario</option>
             </select>
         </div>
 

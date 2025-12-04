@@ -14,7 +14,7 @@ class Database {
             // Intentamos conectar
             $this->conn = new PDO("mysql:host=" . $this->host . ";dbname=" . $this->db_name, $this->username, $this->password);
             
-            // Configuramos para que nos avise si hay errores (importante para depurar)
+            // Configuramos para que nos avise si hay errores 
             $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             
             // Configuramos para que entienda tildes y ñ (UTF-8)

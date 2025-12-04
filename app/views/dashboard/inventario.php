@@ -4,6 +4,21 @@
         <a href="?section=productos-crear" class="btn-primary" style="text-decoration:none;">+ Nuevo Producto</a>
     </header>
     
+<section class="stats-grid" style="margin-bottom: 2rem; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+        
+        <article class="stat-card">
+            <h3> Inventario Total</h3>
+            <p class="stat-number"><?php echo number_format($total_stock); ?> <span style="font-size: 1rem; color: #666;">unidades</span></p>
+            <p>Total de productos en almacén</p>
+        </article>
+        
+        <article class="stat-card" style="border-left-color: #2E7D32;">
+            <h3> Valor Total del Inventario</h3>
+            <p class="stat-number" style="color: #2E7D32;">$<?php echo number_format($valor_inventario, 2); ?></p>
+            <p>Capital invertido en mercancía</p>
+        </article>
+    </section>
+
     <section class="filtros">
         <form action="" method="GET" style="display:flex; gap:1rem; width:100%;">
             
@@ -40,10 +55,16 @@
         <tbody>
             <?php foreach ($lista_productos as $prod): ?>
                 <?php 
-                    // Lógica de presentación: Determinar clase CSS según el estado
-                    // Si dice 'Stock Bajo', usamos la clase 'stock-bajo', si no 'stock-ok'
-                    $clase_stock = ($prod['estado'] === 'Stock Bajo') ? 'stock-bajo' : 'stock-ok';
+                    // Lógica de semáforo actualizada
+                    $clase_stock = 'stock-ok'; // Verde por defecto
+                    
+                    if ($prod['estado'] === 'Sin Stock') {
+                        $clase_stock = 'sin-stock'; // Rojo
+                    } elseif ($prod['estado'] === 'Stock Bajo') {
+                        $clase_stock = 'stock-bajo'; // Naranja
+                    }
                 ?>
+                
                 <tr>
                     <td><?php echo $prod['nombre']; ?></td>
                     <td><?php echo $prod['categoria']; ?></td>

@@ -5,18 +5,21 @@ ini_set('display_errors', 1);
 // 1. Iniciar sesión
 session_start();
 
-// 2. Cargar controladores
+// 2. Cargar controladores y modelos necesarios
 require_once '../app/Controllers/DashboardController.php';
 require_once '../app/Controllers/AuthController.php';
 
-// 3. Enrutador
-$section = isset($_GET['section']) ? $_GET['section'] : 'login';
+// 3. Enrutador: ¿Qué sección quiere ver el usuario?
+$section = isset($_GET['section']) ? $_GET['section'] : 'landing'; // <-- Si no pone nada, va a landing por defecto
 
-// 4. SEGURIDAD: Si no estás logueado, vas para afuera (Login)
-$rutas_publicas = ['login', 'login-auth', 'generar-pass'];
+// 4. SEGURIDAD: Lista de secciones que puede ver CUALQUIERA (sin loguearse)
+// ¡AQUÍ ES DONDE ESTABA TU ERROR! Faltaba 'landing' en esta lista.
+$rutas_publicas = ['landing', 'login', 'login-auth', 'registro', 'auth-registro'];
 
+// El Portero: Si NO estás logueado Y la sección NO es pública...
 if (!isset($_SESSION['usuario_id']) && !in_array($section, $rutas_publicas)) {
-    header("Location: ?section=login");
+    // ... te mando a la landing (o al login si prefieres)
+    header("Location: ?section=landing");
     exit();
 }
 
@@ -24,7 +27,12 @@ $controller = new DashboardController();
 $auth = new AuthController();
 
 switch ($section) {
-    // --- AUTH ---
+    // --- RUTAS PÚBLICAS ---
+    case 'landing':
+        // Carga directa de la vista landing
+        require_once '../app/Views/landing.php';
+        break;
+
     case 'login':
         $auth->login();
         break;
@@ -34,16 +42,29 @@ switch ($section) {
     case 'logout':
         $auth->logout();
         break;
-    case 'generar-pass':
-        // Herramienta temporal para obtener hash de contraseña
-        echo password_hash("123456", PASSWORD_DEFAULT);
+    case 'registro':
+        $auth->registro();
+        break;
+    case 'auth-registro':
+        $auth->registrarUsuario();
         break;
 
-    // --- DASHBOARD ---
+    // --- RUTAS PRIVADAS (Dashboard) ---
     case 'stats':
         $controller->stats();
         break;
         
+    // --- CONFIGURACIÓN ---
+    case 'configuracion':
+        $controller->configuracion();
+        break;
+    case 'config-guardar':
+        $controller->guardarConfiguracion();
+        break;
+    case 'config-reset':
+        $controller->restablecerConfiguracion();
+        break;
+
     // --- USUARIOS ---
     case 'usuarios':
         $controller->usuarios();
@@ -66,47 +87,38 @@ switch ($section) {
     case 'usuarios-estado':
         $controller->cambiarEstadoUsuario();
         break;
-        case 'usuarios-estado':
-        $controller->cambiarEstadoUsuario();
-        break;
-    case 'usuarios-reset':      // <--- NUEVA RUTA
+    case 'usuarios-reset':
         $controller->resetearClaveUsuario();
         break;
 
-// --- PRODUCTOS / INVENTARIO ---
+    // --- PRODUCTOS ---
     case 'inventario':
         $controller->inventario();
         break;
-    case 'productos-crear':       // <--- NUEVA
+    case 'productos-crear':
         $controller->crearProducto();
         break;
-    case 'productos-guardar':     // <--- NUEVA
+    case 'productos-guardar':
         $controller->guardarProducto();
         break;
-    case 'inventario':
-        $controller->inventario();
-        break;
-        case 'productos-editar':      // <--- NUEVA
+    case 'productos-editar':
         $controller->editarProducto();
         break;
-    case 'productos-actualizar':  // <--- NUEVA
+    case 'productos-actualizar':
         $controller->actualizarProducto();
         break;
-    case 'productos-eliminar':    // <--- NUEVA
+    case 'productos-eliminar':
         $controller->eliminarProducto();
         break;
 
-
+    // --- VENTAS ---
     case 'ventas':
         $controller->ventas();
         break;
-    case 'ventas':
-        $controller->ventas();
-        break;
-    case 'ventas-crear':      // <--- NUEVA
+    case 'ventas-crear':
         $controller->crearVenta();
         break;
-    case 'ventas-guardar':    // <--- NUEVA
+    case 'ventas-guardar':
         $controller->guardarVenta();
         break;
     case 'ventas-ver': 
@@ -119,18 +131,19 @@ switch ($section) {
         $controller->cancelarVenta(); 
         break;
 
+    // --- OTROS ---
     case 'reportes':
         $controller->reportes();
         break;
-        
-    default:
-        $controller->stats();
-        break;
-
-        case 'perfil':
+    case 'perfil':
         $controller->perfil();
         break;
     case 'perfil-guardar':
         $controller->guardarPerfil();
+        break;
+        
+    default:
+        // Si la ruta no existe, mandamos a landing
+        header("Location: ?section=landing");
         break;
 }

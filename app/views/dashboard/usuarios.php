@@ -12,8 +12,7 @@
             <select name="rol" class="select-filtro" aria-label="Filtrar por rol" onchange="this.form.submit()">
                 <option <?php echo (!isset($filtro_actual) || $filtro_actual == 'Todos los roles') ? 'selected' : ''; ?>>Todos los roles</option>
                 <option value="Administrador" <?php echo (isset($filtro_actual) && $filtro_actual == 'Administrador') ? 'selected' : ''; ?>>Administrador</option>
-                <option value="Vendedor" <?php echo (isset($filtro_actual) && $filtro_actual == 'Vendedor') ? 'selected' : ''; ?>>Vendedor</option>
-                <option value="Inventario" <?php echo (isset($filtro_actual) && $filtro_actual == 'Inventario') ? 'selected' : ''; ?>>Inventario</option>
+                <option value="Empleado" <?php echo (isset($filtro_actual) && $filtro_actual == 'Empleado') ? 'selected' : ''; ?>>Empleado</option>
             </select>
         </form>
     </section>
@@ -24,7 +23,6 @@
                 <th scope="col">Nombre</th>
                 <th scope="col">Email</th>
                 <th scope="col">Rol</th>
-                <th scope="col">Sucursal</th>
                 <th scope="col">Estado</th>
                 <th scope="col">Acciones</th>
             </tr>
@@ -35,6 +33,7 @@
                     // Lógica robusta: Funciona con "Activo", "1", 1, true, etc.
                     $es_activo = ($usuario['estado'] === 'Activo' || $usuario['estado'] == 1);
                     
+                    // Convertimos el rol a minúsculas para las clases CSS (ej: empleado)
                     $clase_rol = strtolower($usuario['rol']); 
                     $clase_estado = $es_activo ? 'activo' : 'inactivo';
                     $texto_estado = $es_activo ? 'Activo' : 'Inactivo';
@@ -47,7 +46,7 @@
                             <?php echo $usuario['rol']; ?>
                         </mark>
                     </td>
-                    <td><?php echo $usuario['sucursal']; ?></td>
+                    
                     <td>
                         <mark class="estado <?php echo $clase_estado; ?>">
                             <?php echo $texto_estado; ?>
@@ -60,8 +59,9 @@
                             <?php if ($es_activo): ?>
                                 <a href="?section=usuarios-estado&id=<?php echo $usuario['id']; ?>&estado=0" 
                                    class="btn-eliminar" 
-                                   style="text-decoration:none;">
-                                   Desactivar
+                                   style="text-decoration:none;"
+                                   onclick="return confirm('¿Estás seguro de ELIMINAR este usuario? Pasará a estado Inactivo.');">
+                                   Eliminar
                                 </a>
                             <?php else: ?>
                                 <a href="?section=usuarios-estado&id=<?php echo $usuario['id']; ?>&estado=1" 
@@ -70,13 +70,6 @@
                                    Activar
                                 </a>
                             <?php endif; ?>
-
-                            <a href="?section=usuarios-eliminar&id=<?php echo $usuario['id']; ?>" 
-                               class="btn-eliminar" 
-                               style="text-decoration:none; border: 1px solid #C62828; background-color: #ffebee; color: #c62828;"
-                               onclick="return confirm('¿Estás seguro? Esto no se puede deshacer.');">
-                               Eliminar
-                            </a>
 
                             <a href="?section=usuarios-reset&id=<?php echo $usuario['id']; ?>" 
                                class="btn-editar" 
